@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course Recap Generator — turn a slide deck into a cited recap</title>
+<meta name="description" content="Drop a PDF of lecture slides and get a slide-cited summary, a concept diagram and a glossary. Everything runs in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+/* Set the theme before first paint so there is no flash. */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('crg-theme'); } catch (e) {}
+  var theme = saved === 'light' || saved === 'dark'
+    ? saved
+    : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="shell topbar-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      Course Recap Generator
+    </a>
+
+    <nav class="topnav" aria-label="Sections">
+      <a href="#upload-section">Upload</a>
+      <a href="#results" data-nav="results" hidden>Recap</a>
+      <a href="#sample">Sample recap</a>
+    </nav>
+
+    <button id="theme-toggle" class="ghost-btn theme-toggle" type="button">
+      <span class="theme-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-label">Light</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ── Hero + upload ───────────────────────────────────────────────── -->
+  <section class="hero" id="upload-section">
+    <div class="shell hero-inner">
+      <p class="kicker reveal" style="--d:0ms">Runs entirely in your browser</p>
+      <h1 class="hero-title reveal" style="--d:60ms">
+        AI Coding Techniques — Day 3
+      </h1>
+      <p class="hero-sub reveal" style="--d:120ms">
+        From understanding LLMs to building with them. Slides 1-21. Drop a PDF to get your own slide-cited recap.
+      </p>
+
+      <!-- Drop zone -->
+      <div class="dropzone reveal" id="dropzone" style="--d:180ms">
+        <input type="file" id="file-input" accept="application/pdf,.pdf" class="visually-hidden">
+        <div class="dropzone-inner">
+          <div class="dropzone-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+            </svg>
+          </div>
+          <p class="dropzone-title">Drop a PDF here</p>
+          <p class="dropzone-sub">or <button type="button" class="link-btn" id="browse-btn">choose a file</button> &middot; PDF only, up to 40 MB</p>
+          <p class="privacy-note">Your file never leaves this device. Text is read in your browser with pdf.js.</p>
+        </div>
+
+        <div class="dropzone-progress" id="progress" hidden>
+          <div class="progress-head">
+            <span id="progress-label">Reading your PDF…</span>
+            <span id="progress-pct" class="mono">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="dropzone-error" id="drop-error" role="alert" hidden>
+          <span class="err-icon" aria-hidden="true">!</span>
+          <p id="drop-error-text"></p>
+        </div>
+      </div>
+
+      <p class="hero-foot reveal" style="--d:240ms">
+        No account, no upload, no server. Only text that was on the slides is used.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Results ────────────────────────────────────────────────────── -->
+  <section class="section" id="results" hidden>
+    <div class="shell">
+
+      <div class="deck-head">
+        <div>
+          <h2 id="deck-title">Your recap</h2>
+          <p class="deck-meta" id="deck-meta"></p>
+        </div>
+        <div class="deck-actions">
+          <button type="button" class="ghost-btn" id="copy-summary">Copy summary</button>
+          <button type="button" class="ghost-btn" id="download-md">Download as Markdown</button>
+          <button type="button" class="ghost-btn" id="reset">Start over</button>
+        </div>
+      </div>
+
+      <p class="provenance">
+        <strong>Extractive summary generated in your browser.</strong>
+        Every line below is a sentence that appeared on a slide. Nothing was written for you, and no text was sent anywhere.
+      </p>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tablist" role="tablist" aria-label="Recap sections">
+          <button class="tab" role="tab" id="tab-summary" aria-controls="panel-summary" aria-selected="true" tabindex="0">Summary</button>
+          <button class="tab" role="tab" id="tab-diagram" aria-controls="panel-diagram" aria-selected="false" tabindex="-1">Diagram</button>
+          <button class="tab" role="tab" id="tab-slides" aria-controls="panel-slides" aria-selected="false" tabindex="-1">Slides</button>
+          <button class="tab" role="tab" id="tab-glossary" aria-controls="panel-glossary" aria-selected="false" tabindex="-1">Glossary</button>
+        </div>
+
+        <div class="panel" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0"></div>
+
+        <div class="panel" role="tabpanel" id="panel-diagram" aria-labelledby="tab-diagram" tabindex="0" hidden>
+          <div class="diagram-toolbar">
+            <div class="seg" role="group" aria-label="Diagram style">
+              <button type="button" class="seg-btn is-active" data-style="flowchart" aria-pressed="true">Flow</button>
+              <button type="button" class="seg-btn" data-style="mindmap" aria-pressed="false">Mind map</button>
+            </div>
+            <div class="diagram-actions">
+              <button type="button" class="ghost-btn" id="copy-mermaid">Copy Mermaid code</button>
+              <button type="button" class="ghost-btn" id="download-svg">Download SVG</button>
+              <button type="button" class="ghost-btn" id="download-mmd">Download .mmd</button>
+            </div>
+          </div>
+          <div class="diagram-surface" id="diagram-surface"></div>
+          <details class="source-details">
+            <summary>Mermaid source</summary>
+            <pre class="mono source-block" id="mermaid-source"></pre>
+          </details>
+        </div>
+
+        <div class="panel" role="tabpanel" id="panel-slides" aria-labelledby="tab-slides" tabindex="0" hidden></div>
+
+        <div class="panel" role="tabpanel" id="panel-glossary" aria-labelledby="tab-glossary" tabindex="0" hidden></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Sample recap ───────────────────────────────────────────────── -->
+  <section class="section" id="sample">
+    <div class="shell">
+      <div class="deck-head">
+        <div>
+          <h2>Sample recap — AI Coding Techniques</h2>
+          <p class="deck-meta" id="sample-meta"></p>
+        </div>
+        <div class="deck-actions">
+          <button type="button" class="ghost-btn" id="sample-copy">Copy summary</button>
+          <button type="button" class="ghost-btn" id="sample-download">Download as Markdown</button>
+        </div>
+      </div>
+
+<p class="provenance">
+         Built from the Day 3 lecture deck. Slide numbers are cited on every item. The text below is embedded in this page, not fetched.
+       </p>
+
+      <div class="tabs">
+        <div class="tablist" role="tablist" aria-label="Sample recap sections">
+          <button class="tab" role="tab" id="stab-summary" aria-controls="spanel-summary" aria-selected="true" tabindex="0">Summary</button>
+          <button class="tab" role="tab" id="stab-diagram" aria-controls="spanel-diagram" aria-selected="false" tabindex="-1">Diagram</button>
+          <button class="tab" role="tab" id="stab-slides" aria-controls="spanel-slides" aria-selected="false" tabindex="-1">Slides</button>
+          <button class="tab" role="tab" id="stab-glossary" aria-controls="spanel-glossary" aria-selected="false" tabindex="-1">Glossary</button>
+        </div>
+
+        <div class="panel" role="tabpanel" id="spanel-summary" aria-labelledby="stab-summary" tabindex="0"></div>
+
+        <div class="panel" role="tabpanel" id="spanel-diagram" aria-labelledby="stab-diagram" tabindex="0" hidden>
+          <div class="diagram-toolbar">
+            <div class="seg" role="group" aria-label="Diagram style">
+              <button type="button" class="seg-btn is-active" data-style="flowchart" aria-pressed="true">Flow</button>
+              <button type="button" class="seg-btn" data-style="mindmap" aria-pressed="false">Mind map</button>
+            </div>
+            <div class="diagram-actions">
+              <button type="button" class="ghost-btn" id="sample-copy-mermaid">Copy Mermaid code</button>
+              <button type="button" class="ghost-btn" id="sample-download-svg">Download SVG</button>
+              <button type="button" class="ghost-btn" id="sample-download-mmd">Download .mmd</button>
+            </div>
+          </div>
+          <div class="diagram-surface" id="sample-diagram-surface"></div>
+          <details class="source-details">
+            <summary>Mermaid source</summary>
+            <pre class="mono source-block" id="sample-mermaid-source"></pre>
+          </details>
+        </div>
+
+        <div class="panel" role="tabpanel" id="spanel-slides" aria-labelledby="stab-slides" tabindex="0" hidden></div>
+
+        <div class="panel" role="tabpanel" id="spanel-glossary" aria-labelledby="stab-glossary" tabindex="0" hidden></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="shell footer-inner">
+    <p>Course Recap Generator. Extraction, summarising and diagramming all run locally in your browser — nothing is uploaded.</p>
+    <p class="mono footer-note">pdf.js 3.11.174 &middot; Mermaid 11</p>
+  </div>
+</footer>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
