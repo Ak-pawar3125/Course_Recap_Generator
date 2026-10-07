@@ -294,12 +294,17 @@ p { margin: 0; }
   max-width: 20ch;
   font-size: clamp(2.1rem, 6.2vw, 3.65rem);
   font-weight: 700;
+  color: var(--text);
+}
+
+/* The gradient lives on the accent words so the first word stays plain. */
+.hero-title-accent {
   background: linear-gradient(120deg, var(--text) 20%, var(--accent-from) 62%, var(--accent-to) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-[data-theme="light"] .hero-title {
+[data-theme="light"] .hero-title-accent {
   background: linear-gradient(120deg, var(--text) 18%, var(--accent-from) 58%, var(--accent-to) 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -543,6 +548,48 @@ p { margin: 0; }
 .claim-list .badge {
   position: static;
   margin-left: auto;
+}
+
+/* ── Final summary ───────────────────────────────────────────────────── */
+
+.final-summary {
+  margin-top: 2.5rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+  box-shadow: var(--shadow);
+}
+.final-summary[hidden] { display: none; }
+
+.final-summary h3 {
+  margin-bottom: 0.35rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.final-summary .deck-meta {
+  margin: 0 0 1.1rem;
+}
+
+.final-summary ol {
+  margin: 0;
+  padding-left: 1.35rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.final-summary li {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+.final-summary li .slide-cite {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-mute);
+  white-space: nowrap;
 }
 
 .day-block { margin-top: 2.5rem; }

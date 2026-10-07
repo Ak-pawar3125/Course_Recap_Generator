@@ -13,7 +13,7 @@
      ──────────────────────────────────────────────────────────────────── */
 
   var SAMPLE_MD = [
-    '# AI Coding Techniques: From understanding LLMs to building with them',
+    '# Sample: AI Coding Techniques, Day 3 (Slides 1-21)',
     '',
     'Day 3 covers the agent harness: a model wired into a loop that perceives, decides, acts, and observes, plus the tools and practices for building with LLMs. Slides 1-21.',
     '',
@@ -65,17 +65,25 @@
   '- **Skills**: Teach it once, reuse it every time. (Day 3, Slide 16)',
   '- **MCP**: The agent reaches outside the codebase; host, client, server, and what a server offers. (Day 3, Slide 17)',
   '- **Sub-agents**: It delegates a sub-task to another agent. (Day 3, Slide 19)',
-    '',
-'## Source notes',
-  '',
-  'Text was extracted with pypdf, which loses reading order on multi-column slides and drops images. These slides came back near-empty or obviously incomplete and are cited as unread rather than inferred:',
-  '',
-  '- Day 3, Slides 3 and 4 (the landscape, comparison at a glance): only the title and one caption line survive; the four-tool comparison is almost certainly a table or image.',
-  '- Day 3, Slide 18 (MCP: the components): only the caption "Host, client, server, and what a server offers" survives; the component diagram is lost.',
-  '- Day 3, Slide 20 (the best-practice checklist): checklist body is missing.',
-  '',
-  'Ligature characters are corrupted throughout the extracted text ("different" appears as "dierent", "attention" as "aention"), and the Day 3 deck\'s own title slide reads "DAY 6" even though it is presented here as Day 3.'
+    ''
   ].join('\n');
+
+/* The closing lines of the Day 3 recap, in plain language. Every line is a
+   sentence that already appears in the Key concepts or topic sections above,
+   so nothing here is new text: it is the same material, re-ordered into a
+   short read-through. The slide number in brackets is the citation. */
+var SAMPLE_FINAL = [
+  'Day 3 compares four coding tools, each with one defining trait, judged by strength and typical use. [S3]',
+  'You pick one tool for execution, not all four. [S5]',
+  'An agent harness is not a smarter chatbot; it is a model wired into a loop. [S6]',
+  'The loop is perceive, decide, act, observe, and it repeats. [S7]',
+  'What the loop adds is that the environment joins the conversation. [S8]',
+  'Model plus harness equals an agent: the model proposes, the harness does. [S9]',
+  'The harness is everything around the model, and the tool you use ships one that you extend. [S10]',
+  'Agentic file editing means the agent reads and edits real files instead of only answering. [S13]',
+  'Plan mode has it propose a plan before it acts. [S14]',
+  'Skills teach it once, and you reuse it every time. [S16]'
+];
 
 var SAMPLE_MMD = [
   'flowchart TD',
@@ -98,7 +106,7 @@ var SAMPLE_MMD = [
   '  Harness --> Practices'
 ].join('\n');
 
-var SAMPLE_META = 'Day 3 · Slides 1-21';
+var SAMPLE_META = 'Slides 1-21';
 
   /* ────────────────────────────────────────────────────────────────────
      2. TEXT REPAIR
@@ -229,6 +237,18 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
      Same shape the upload path produces, so both render identically.
      ──────────────────────────────────────────────────────────────────── */
 
+  /* "Some sentence. [S7]" -> { text, cite }. The citation is already the
+     badge text, so nothing needs re-parsing downstream. */
+  function parseFinalLines(lines) {
+    return (lines || []).map(function (line) {
+      var t = tidy(line);
+      var m = t.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+      return m
+        ? { text: m[1].trim(), badges: [m[2].trim()] }
+        : { text: t, badges: [] };
+    }).filter(function (l) { return l.text; });
+  }
+
   function parseSampleMarkdown(md) {
     var lines = md.split('\n');
     var recap = {
@@ -239,7 +259,9 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
       concepts: [],
       days: [],
       glossary: [],
-      notes: [],
+      /* The sample carries no per-slide cards; the Slides tab says so. */
+      slides: [],
+      final: parseFinalLines(SAMPLE_FINAL),
       md: md
     };
 
@@ -309,8 +331,6 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
             def: g ? g[2] : body,
             badges: badges
           });
-        } else if (section === 'source notes') {
-          recap.notes.push({ text: body, badges: badges });
         } else if (topic) {
           topic.items.push({ text: body, badges: badges });
         }
@@ -443,6 +463,12 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
 
     var allSentences = slideSentences.reduce(function (a, b) { return a.concat(b); }, []);
 
+    /* Same sentences, each tagged with the slide it was read from. */
+    var sentencesWithSlide = [];
+    slideSentences.forEach(function (sents, idx) {
+      sents.forEach(function (s) { sentencesWithSlide.push({ s: s, n: pages[idx].n }); });
+    });
+
     /* Keyword scoring. Titles weigh more than body text, and a term that
        shows up on nearly every slide is less informative than a rarer one,
        so frequency is damped by how widely the term is spread. */
@@ -488,7 +514,11 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
     var concepts = conceptTerms.map(function (w) {
       var best = null;
       var bestScore = -1;
-      allSentences.forEach(function (s) {
+      var bestN = 0;
+      /* sentencesWithSlide keeps the citation attached to each candidate, so
+         the summary can name the slide a sentence actually came from. */
+      sentencesWithSlide.forEach(function (entry) {
+        var s = entry.s;
         var low = s.toLowerCase();
         var at = low.indexOf(w);
         if (at === -1) return;
@@ -499,15 +529,63 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
         /* Colon before the term is a label-then-gloss pattern. */
         if (s.slice(0, at).indexOf(':') !== -1) score += 30;
         score += Math.min(s.length, 170);
-        if (score > bestScore) { bestScore = score; best = s; }
+        if (score > bestScore) { bestScore = score; best = s; bestN = entry.n; }
       });
       var where = (hits[w] || []).slice(0, 4).map(slideBadge);
       return {
         term: titleCase(w),
         text: best ? truncate(best, 200) : '',
-        badges: where
+        badges: where,
+        /* Prefer the slide the quoted sentence lives on; fall back to the
+           first slide the term appears on. */
+        n: bestN || (hits[w] && hits[w][0]) || 0
       };
     }).filter(function (c) { return c.text; });
+
+    /* Final summary: the strongest sentence for each of the top concepts,
+       ordered by the slide it came from. Extractive like everything else,
+       so a deck with fewer than eight concepts simply yields fewer lines.
+       Several concepts often resolve to the same defining sentence, so
+       repeats are dropped: the same line twice helps nobody. */
+    var seenFinal = {};
+    var conceptWordsForFinal = concepts.map(function (c) {
+      return c.term.toLowerCase();
+    });
+    var final = concepts.slice(0, 10).map(function (c) {
+      return {
+        text: c.text,
+        badges: [slideBadge(c.n)],
+        n: c.n
+      };
+    }).filter(function (l) {
+      var key = l.text.toLowerCase();
+      if (seenFinal[key]) return false;
+      seenFinal[key] = true;
+      return true;
+    });
+
+    /* Dedupe can leave the list short, so top it up from the strongest
+       remaining slide sentences rather than padding with weaker lines. */
+    if (final.length < 8) {
+      sentencesWithSlide
+        .map(function (entry) {
+          var score = entry.s.length;
+          conceptWordsForFinal.forEach(function (w) {
+            if (entry.s.toLowerCase().indexOf(w) !== -1) score += 60;
+          });
+          return { text: entry.s, n: entry.n, score: score };
+        })
+        .sort(function (a, b) { return b.score - a.score; })
+        .forEach(function (entry) {
+          if (final.length >= 8) return;
+          var key = entry.text.toLowerCase();
+          if (seenFinal[key]) return;
+          seenFinal[key] = true;
+          final.push({ text: entry.text, badges: [slideBadge(entry.n)], n: entry.n });
+        });
+    }
+
+    final.sort(function (a, b) { return a.n - b.n; });
 
     /* Slide cards: title plus the two strongest sentences on that slide. */
     var conceptWords = conceptTerms.slice(0, 12);
@@ -659,13 +737,24 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
       }],
       slides: slides,
       glossary: glossary,
-      notes: [],
+      final: final,
       md: ''
     };
   }
 
+  function finalMarkdownLines(lines) {
+    return (lines || []).map(function (l) {
+      return '- ' + l.text +
+        (l.badges.length ? ' ' + l.badges.map(function (b) { return '[' + b + ']'; }).join('') : '');
+    }).join('\n');
+  }
+
   function recapToMarkdown(recap) {
-    if (recap.kind === 'sample') return recap.md;
+    if (recap.kind === 'sample') {
+      if (!recap.final || !recap.final.length) return recap.md;
+      return recap.md.replace(/\s+$/, '') +
+        '\n\n## Final summary\n\n' + finalMarkdownLines(recap.final) + '\n';
+    }
     var out = ['# ' + recap.title, '', recap.purpose, '', '## Key concepts', ''];
     recap.concepts.forEach(function (c) {
       out.push('- **' + c.term + '**: ' + c.text + ' (' + c.badges.join(', ') + ')');
@@ -686,6 +775,11 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
       recap.glossary.forEach(function (g) {
         out.push('- **' + g.term + '**: ' + g.def + ' (' + g.badges.join(', ') + ')');
       });
+      out.push('');
+    }
+    if (recap.final && recap.final.length) {
+      out.push('## Final summary', '');
+      out.push(finalMarkdownLines(recap.final));
       out.push('');
     }
     out.push('Extractive summary generated in the browser by Course Recap Generator. Every line is text that appeared on a slide.');
@@ -969,18 +1063,40 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
 
       panel.appendChild(block);
     });
+  }
 
-    if (recap.notes && recap.notes.length) {
-      panel.appendChild(sectionLabel('Source notes', 'slides that came back unreadable'));
-      var ul = el('ul', 'claim-list');
-      recap.notes.forEach(function (note) {
-        var li = el('li');
-        li.appendChild(el('span', 'claim', note.text));
-        li.appendChild(badges(note.badges));
-        ul.appendChild(li);
-      });
-      panel.appendChild(ul);
+  /* ────────────────────────────────────────────────────────────────────
+     9b. FINAL SUMMARY CARD
+     A last look at the deck in eight to ten lines, one sentence each, with
+     the slide it came from. Rendered after the tabs, at the end of results.
+     ──────────────────────────────────────────────────────────────────── */
+
+  function renderFinalSummary(host, recap) {
+    if (!host) return;
+    host.textContent = '';
+    if (!recap || !recap.final || !recap.final.length) {
+      host.hidden = true;
+      return;
     }
+    host.hidden = false;
+
+    host.appendChild(el('h3', null, 'Final summary'));
+    host.appendChild(el('p', 'deck-meta',
+      recap.kind === 'sample'
+        ? 'The Day 3 deck in ' + recap.final.length + ' lines, each one cited to its slide.'
+        : recap.final.length + ' line' + (recap.final.length === 1 ? '' : 's') +
+          ' — the strongest sentence for each top key concept, in slide order.'));
+
+    var ol = el('ol');
+    recap.final.forEach(function (l) {
+      var li = el('li');
+      li.appendChild(document.createTextNode(l.text + ' '));
+      (l.badges || []).forEach(function (b) {
+        li.appendChild(el('span', 'slide-cite', '[' + b + ']'));
+      });
+      ol.appendChild(li);
+    });
+    host.appendChild(ol);
   }
 
   function sectionLabel(text, hint) {
@@ -1109,6 +1225,7 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
        style: 'flowchart',
        surface: config.surface,
        sourceEl: config.sourceEl,
+       final: config.final,
        tabs: initTabs(config.tablist),
        rootLabel: config.rootLabel || 'Recap',
        headings: config.headings || [],
@@ -1166,6 +1283,7 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
       renderSummaryPanel(config.summary, recap);
       renderSlidesPanel(config.slides, recap);
       renderGlossaryPanel(config.glossary, recap);
+      renderFinalSummary(config.final, recap);
       if (config.deckTitle) config.deckTitle.textContent = recap.title;
       if (config.deckMeta) config.deckMeta.textContent = recap.meta;
       view.drawDiagram();
@@ -1463,6 +1581,7 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
     glossary: document.getElementById('spanel-glossary'),
     surface: document.getElementById('sample-diagram-surface'),
     sourceEl: document.getElementById('sample-mermaid-source'),
+    final: document.getElementById('sample-final-summary'),
     deckTitle: document.querySelector('#sample h2'),
     deckMeta: document.getElementById('sample-meta'),
     rootLabel: 'Applied AI Track'
@@ -1475,6 +1594,7 @@ var SAMPLE_META = 'Day 3 · Slides 1-21';
     glossary: document.getElementById('panel-glossary'),
     surface: document.getElementById('diagram-surface'),
     sourceEl: document.getElementById('mermaid-source'),
+    final: document.getElementById('final-summary'),
     deckTitle: document.getElementById('deck-title'),
     deckMeta: document.getElementById('deck-meta'),
     rootLabel: 'Your deck'

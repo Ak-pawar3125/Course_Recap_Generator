@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Course Recap Generator — turn a slide deck into a cited recap</title>
+<title>Course Recap Generator</title>
 <meta name="description" content="Drop a PDF of lecture slides and get a slide-cited summary, a concept diagram and a glossary. Everything runs in your browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,10 +52,10 @@
     <div class="shell hero-inner">
       <p class="kicker reveal" style="--d:0ms">Runs entirely in your browser</p>
       <h1 class="hero-title reveal" style="--d:60ms">
-        AI Coding Techniques — Day 3
+        Course <span class="hero-title-accent">Recap Generator</span>
       </h1>
       <p class="hero-sub reveal" style="--d:120ms">
-        From understanding LLMs to building with them. Slides 1-21. Drop a PDF to get your own slide-cited recap.
+        Upload your course slides as a PDF and get a slide-cited summary, key concepts, a glossary and a diagram in seconds.
       </p>
 
       <!-- Drop zone -->
@@ -150,6 +150,9 @@
         <div class="panel" role="tabpanel" id="panel-glossary" aria-labelledby="tab-glossary" tabindex="0" hidden></div>
       </div>
 
+      <!-- Final summary: last card in the results area, after every tab. -->
+      <div class="final-summary" id="final-summary" hidden></div>
+
     </div>
   </section>
 
@@ -158,7 +161,7 @@
     <div class="shell">
       <div class="deck-head">
         <div>
-          <h2>Sample recap — AI Coding Techniques</h2>
+          <h2>Sample: AI Coding Techniques, Day 3 (Slides 1-21)</h2>
           <p class="deck-meta" id="sample-meta"></p>
         </div>
         <div class="deck-actions">
@@ -204,6 +207,8 @@
 
         <div class="panel" role="tabpanel" id="spanel-glossary" aria-labelledby="stab-glossary" tabindex="0" hidden></div>
       </div>
+
+      <div class="final-summary" id="sample-final-summary"></div>
     </div>
   </section>
 
