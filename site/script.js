@@ -1555,20 +1555,71 @@ var SAMPLE_META = 'Slides 1-21';
       .filter(function (l) { return l.length > 0; });
   }
 
-    function renderUploaded(fileName, pages, withText, noTextCount) {
+function renderUploaded(fileName, pages, withText, noTextCount) {
       var recap = buildRecap(fileName, pages);
       recap.meta = pages.length + ' slides · ' + withText + ' with text · ' +
         (noTextCount ? noTextCount + ' image-only · ' : '') +
         recap.concepts.length + ' key concepts';
-     recap.md = recapToMarkdown(recap);
- 
-     uploadView.render(recap);
-     resultsSection.hidden = false;
-     if (resultsNav) resultsNav.hidden = false;
-     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-     toast('Recap ready: ' + withText + ' slides read');
-     updateExportState(uploadView);
-   }
+      recap.md = recapToMarkdown(recap);
+
+      uploadView.render(recap);
+      resultsSection.hidden = false;
+      if (resultsNav) resultsNav.hidden = false;
+
+      var sampleSection = document.getElementById('sample');
+      if (sampleSection) sampleSection.hidden = true;
+
+      var fileLabel = document.getElementById('results-file-label');
+      if (fileLabel) {
+        fileLabel.textContent = 'Results for ' + fileName;
+        fileLabel.hidden = false;
+      }
+
+      var backBtn = document.getElementById('back-to-sample');
+      if (backBtn) backBtn.hidden = false;
+
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast('Recap ready: ' + withText + ' slides read');
+      updateExportState(uploadView);
+      updateExportState(sampleView);
+    }
+
+    function showSample() {
+      var sampleSection = document.getElementById('sample');
+      if (sampleSection) sampleSection.hidden = false;
+
+      resultsSection.hidden = true;
+      if (resultsNav) resultsNav.hidden = true;
+
+      var fileLabel = document.getElementById('results-file-label');
+      if (fileLabel) fileLabel.hidden = true;
+
+      var backBtn = document.getElementById('back-to-sample');
+      if (backBtn) backBtn.hidden = true;
+
+      var fileInput = document.getElementById('file-input');
+      if (fileInput) fileInput.value = '';
+
+      clearError();
+      progress.hidden = true;
+      progressFill.style.width = '0%';
+
+      uploadView.recap = null;
+      uploadView.surface.textContent = '';
+      uploadView.sourceEl.textContent = '';
+      uploadView._svgString = '';
+      uploadView.final.textContent = '';
+      uploadView.final.hidden = true;
+
+      sampleView.tabs.select(0);
+      uploadView.tabs.select(0);
+
+      sampleView.drawDiagram();
+
+      document.getElementById('upload-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      updateExportState(sampleView);
+      updateExportState(uploadView);
+    }
 
   /* ────────────────────────────────────────────────────────────────────
      14. WIRE UP
@@ -1705,21 +1756,17 @@ var SAMPLE_META = 'Slides 1-21';
    wireDiagramExport('sample-copy-mermaid', 'sample-download-svg', 'sample-download-mmd', sampleView);
    wireDiagramExport('copy-mermaid', 'download-svg', 'download-mmd', uploadView);
  
-   /* Reset. */
-   var resetBtn = document.getElementById('reset');
-   if (resetBtn) {
-     resetBtn.addEventListener('click', function () {
-       if (fileInput) fileInput.value = '';
-       clearError();
-       progress.hidden = true;
-       progressFill.style.width = '0%';
-       resultsSection.hidden = true;
-       if (resultsNav) resultsNav.hidden = true;
-       document.getElementById('upload-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-       updateExportState(sampleView);
-       updateExportState(uploadView);
-     });
-   }
+/* Reset. */
+    var resetBtn = document.getElementById('reset');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', showSample);
+    }
+
+    /* Back to sample. */
+    var backBtn = document.getElementById('back-to-sample');
+    if (backBtn) {
+      backBtn.addEventListener('click', showSample);
+    }
  
    /* ── Sample recap ─────────────────────────────────────────────────── */
  
