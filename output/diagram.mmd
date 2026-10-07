@@ -1,0 +1,25 @@
+flowchart TD
+  D1[Day 1 Foundations]
+  D2[Day 2 Prompting]
+  D3[Day 3 Coding]
+  D4[Day 4 Inference]
+  TOK[Tokens]
+  CTX[Context window]
+  TRUNC[Silent truncation]
+  STRUCT[Prompt structure]
+  FEW[Few shot prompting]
+  INJECT[Prompt injection]
+  HARNESS[Agent harness loop]
+  TTFT[TTFT and TPOT]
+  D1 --> TOK
+  TOK --> CTX
+  CTX --> TRUNC
+  D1 --> D2
+  D2 --> STRUCT
+  D2 --> FEW
+  STRUCT --> INJECT
+  D2 --> D3
+  STRUCT --> HARNESS
+  D3 --> D4
+  D4 --> TTFT
+  HARNESS --> TTFT

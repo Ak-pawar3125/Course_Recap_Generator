@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "pdf": {
+      "type": "local",
+      "command": ["npx", "-y", "@sylphlab/pdf-reader-mcp"],
+      "enabled": false
+    },
+    "mermaid": {
+      "type": "local",
+      "command": ["cmd", "/c", "mcp-mermaid"],
+      "enabled": true
+    }
+  }
+}
