@@ -2,15 +2,7 @@
 
 Takes course slide PDFs, extracts the text, and produces a slide-cited summary, key concepts, glossary, final summary and a Mermaid diagram, shown on a static website where users can also upload their own PDF. Harness used: OpenCode.
 
-Live site: TODO
-Repository: TODO
-
-Quick start:
-```bash
-cd site
-python -m http.server 8000
-```
-Open http://localhost:8000 (run from the site folder).
+Live site: https://course-recap-generator.netlify.app
 
 ## 1. Planning phase and my choices
 
