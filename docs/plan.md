@@ -158,3 +158,61 @@ Check the built site against the short list below.
 ---
 
 Two things worth flagging: the 12-node diagram cap is the tightest constraint (4 days × topics won't fit), and `@deck-summarizer` and `@summary-reviewer` both have `bash: false` — so neither can count slides or run the renderer itself; the mermaid render in Task 2 has to happen in the orchestrator unless you'd rather I adjust the agent permissions.
+
+(End of file - total 160 lines)
+
+## Revision log: changes after planning (2026-10-08)
+
+1. **Extraction moved to extract.py (pypdf)**
+   - The pdf MCP (@sylphlab/pdf-reader-mcp) failed with Buffer/Uint8Array error; pinned 0.3.15 would not connect.
+   - Added extract.py using pypdf, writes per-slide text to input/text/; agents read from there.
+   - Shown in: extract.py (pypdf extraction), input/text/*.md (output), opencode.json (pdf MCP disabled)
+
+2. **Mermaid MCP needs Windows wrapper**
+   - Global install required; "cmd /c" wrapper in opencode.json before it connected.
+   - Shown in: opencode.json:11 ("command": ["cmd", "/c", "mcp-mermaid"])
+
+3. **Website rebuilt as interactive tool**
+   - First static report had no upload and no visible diagram.
+   - Rebuilt with PDF upload (pdf.js in browser), extractive summary, glossary, Mermaid diagram with flowchart/mindmap toggle, light/dark mode.
+   - Shown in: site/index.html (upload, tabs, toolbar), site/script.js (pdf.js, extractive summarizer, diagram builder, theme toggle)
+
+4. **Sample recap reduced to one deck; hides on upload**
+   - Was four decks; now only Day 3 (AI Coding Techniques). Sample section hidden when user uploads a file.
+   - Shown in: site/index.html:162 (sample section), site/script.js:1219+ (sample hidden on upload)
+
+5. **Source notes removed; Final summary added (8–10 lines with slide numbers)**
+   - Source notes section removed from summary.md; Final summary section added with 8–10 lines, each citing slide numbers.
+   - Shown in: output/summary.md (no Source notes, has Final summary), site/script.js:1074 (renderFinalSummary)
+
+6. **Copy and download for summary (Markdown) and diagram (SVG + .mmd)**
+   - Buttons for copy/download summary as Markdown; copy/download diagram as SVG and .mmd.
+   - Shown in: site/index.html:108-110,138-140 (results), site/index.html:170-172,196-199 (sample), site/script.js:872 (copyText), site/script.js:906 (download)
+
+7. **Hero and page title renamed to "Course Recap Generator"**
+   - Title and brand text updated.
+   - Shown in: site/index.html:6 (<title>), site/index.html:32 (brand), site/index.html:55 (hero title)
+
+8. **Project folder renamed from PPT_Analyzer to Course_Recap_Generator**
+   - Repository and folder name changed.
+   - Shown in: README.md:1, README.md:57 (structure), git history (f4a3369)
+
+9. **GitHub main protected by repository ruleset; changes via PRs (plain git)**
+   - Main branch protected; push through pull requests using plain git, not GitHub MCP.
+   - Shown in: git log shows merge commits (ed76d52), GitHub MCP not configured in opencode.json
+
+10. **Documentation added: README.md (exists); docs/architecture.md does not exist**
+    - README.md created with full project docs.
+    - docs/architecture.md was planned but not created.
+    - Shown in: README.md (exists), docs/ (no architecture.md)
+
+---
+
+### Still true from the original plan
+- Single pass per task (Task 0–6), one review round (Task 3 reviewer, Task 4 fix pass)
+- Reviewer is read-only (summary-reviewer.md: tools bash: false, edit: false, write: false)
+- Skills used: deck-concept-extraction, diagram-style (as specified in deck-summarizer.md)
+- Extraction via extract.py writing input/text/ (Task 1)
+- Summary structure: title/purpose → key concepts → per-day topics → relationships → glossary (matches deck-concept-extraction skill)
+- Diagram: flowchart TD, ≤12 nodes, labels ≤5 words (diagram-style skill)
+- Site: dark-first technical notebook, one cyan accent, monospace citations, Inter for prose, citation rail, light/dark toggle persisted (Concept A)
